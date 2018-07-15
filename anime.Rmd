@@ -50,17 +50,6 @@ prc.usr.anime.file = function(rc, wd){
 
 ```
 
-
-Read back in the sample of the user to Anime File
-```{r}
-read.myUsrAni.file = function (){
-  myUsrAni.file = paste0(wd, "/code/output/MycleanUserAnimeList.csv")
-  usrAni = read.csv(myUsrAni.file, sep = ",", header = T)
-  return (usrAni)
-}
-
-```
-
 #Read in the file
 ```{r}
 read.file = function (dir, f){
@@ -69,16 +58,6 @@ read.file = function (dir, f){
   return (ds)
 }
 
-```
-
-
-#Read in the User file
-```{r}
-read.Ani.file = function (){
-  myAni.file = paste0(wd, "/myAnimeList Dataset/extracted data/UsrList.csv")
-  Ani = read.csv(myAni.file, sep = ",", header = T)
-  return (Ani)
-}
 ```
 
 #Main
