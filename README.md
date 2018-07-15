@@ -9,6 +9,9 @@ This project is from our MSDA program at UTSA.  Our original challenge was to fi
   4. Build and iterate on your solution.
   5. Generate and refine conclusions
 
+## Our Approach
+To find a real world problem, we started out by looking for something that we knew about but did not have extensive research into it.  We found the Anime dataset and realized both of us have an interest in Anime through our children.  We then proceded to design a hypothesis based upon a dataset that we found on Kaggle.  We then looked for more datasets to include into our research. 
+
 ## Original Dataset
   Kaggle Datasets at: https://www.kaggle.com/azathoth42/myanimelist/home
     
@@ -16,3 +19,6 @@ This project is from our MSDA program at UTSA.  Our original challenge was to fi
     1. AnimeList.csv
     2. UserAnimeList.csv
     3. UserList.csv
+
+## Wiki 
+The wiki associated with this project will give more information about this project and it's conculsion. 
