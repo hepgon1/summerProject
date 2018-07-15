@@ -1,0 +1,57 @@
+---
+title: "anime"
+author: "Garcia.Heather"
+date: "July 8, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#library(data.table)
+#pr = fread("D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/UserAnimeList.csv", sep = ",")
+
+#library(sqldf)
+#pr = read.csv.sql("D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/UserAnimeList.csv", sql = "select * from file order by random() limit 20000", sep = ",")
+
+pr = read.csv("D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/UserAnimeList.csv", nrows = 200)
+```
+```{r}
+head(pr)
+names(pr[,2])
+print(head(pr[,2]))
+pr[which(pr[,2] == 21),]
+#if(pr[,2] == 6702) { print("found")}
+#write.csv(pr[which(pr[,2] == 6702)], "D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/MycleanUserAnimeList.csv")
+```
+64M records in the file.
+83K for one anime show (21)
+
+```{r}
+rowcnt= 2000000
+skp = 0
+
+for (i in 1:32){
+  if(i==1){
+    pr = read.csv("D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/UserAnimeList.csv", nrows = rowcnt, skip = skp, header = T)
+    write.table(pr[which(pr[,2] == 21),], "D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/MycleanUserAnimeList.csv", append = T, sep = ",", col.names = T)
+  }else{
+    pr = read.csv("D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/UserAnimeList.csv", nrows = rowcnt, skip = skp, header = F)
+    write.table(pr[which(pr[,2] == 21),], "D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/MycleanUserAnimeList.csv", append = T, sep = ",", col.names = F)
+  }
+  
+  skp = skp + rowcnt
+  
+  print(skp) 
+  print(head(pr))
+}
+
+```
+
+```{r}
+usrAni = read.table("D:/Data Analytic Applications/anime/myAnimeList Dataset/extracted data/MycleanUserAnimeList.csv")
+```
+
+
