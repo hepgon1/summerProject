@@ -10,10 +10,9 @@ This project is from our MSDA program at UTSA.  Our original challenge was to fi
   5. Generate and refine conclusions
 
 ## Original Dataset
-  Kaggle Datasets: 
-  
-  1. https://www.kaggle.com/azathoth42/myanimelist/home
+  Kaggle Datasets at: https://www.kaggle.com/azathoth42/myanimelist/home
+    
     We used the original data in these zips: 
-    AnimeList.csv
-    UserAnimeList.csv
-    UserList.csv
+    1. AnimeList.csv
+    2. UserAnimeList.csv
+    3. UserList.csv
