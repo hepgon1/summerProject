@@ -7,6 +7,7 @@ output: word_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(sqldf)
 ```
 
 Main is on the bottom of this file. 
@@ -60,6 +61,22 @@ read.file = function (dir, f){
 
 ```
 
+#Join the datasets
+```{r}
+join = function(){
+  joined.ds = sqldf("select a.title, a.type, a.source, a.episodes, a.status, a.airing, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.favorites, a.background, a.premiered, a.broadcast, a.related, a.producer, a.licensor, a.studio, a.genre, a.opening_theme, a.ending_theme, m.username, m.my_watched_episodes, m.my_start_date, m.my_finish_date, m.my_score, m.my_status,  m.my_rewatching, m.my_rewatching_ep, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.user_days_spent_watching, u.gender, u.location, u.birth_date, u.access_rank, u.join_date, u.last_online
+      from ani as a 
+      join myusrAni as m
+        on a.anime_id = m.anime_id
+      join usr as u
+        on u.username = m.username")
+   wrt.usr.anime.file = paste0(wd,"/code/output/joinedDS.csv")
+  write.table(joined.ds, wrt.usr.anime.file, append = F, sep = ",", col.names = T, row.names = F)
+  return(joined.ds)
+}
+```
+
+
 #Main
 ```{r}
 setwd("D:/Data Analytic Applications/anime")
@@ -75,6 +92,8 @@ head(ani)
 
 usr = read.file("/myAnimeList Dataset/extracted data/", "UserList.csv")
 head(usr)
+
+all.ds = join()
 ```
 
 
