@@ -1,2 +1,2 @@
-# summerProject
-summer project for MSDA
+# Anime Predictions
+#### Heather Garcia and Tyler Reed
