@@ -13,12 +13,7 @@ This project is from our MSDA program at UTSA.  Our original challenge was to fi
   Kaggle Datasets: 
   
   1. https://www.kaggle.com/azathoth42/myanimelist/home
-  
     We used the original data in these zips: 
-  
     AnimeList.csv
-  
     UserAnimeList.csv
-  
     UserList.csv
-
