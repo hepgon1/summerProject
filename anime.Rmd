@@ -8,6 +8,9 @@ output: word_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(sqldf)
+library(caret)
+library(timeDate)
+library(dplyr)
 ```
 
 Main is on the bottom of this file. 
@@ -32,20 +35,23 @@ prc.usr.anime.file = function(rc, wd){
   wrt.usr.anime.file = paste0(wd,"/code/output/MycleanUserAnimeList.csv")
   
   #Read the file and process rowcnt number of rows to pull an anime from the list of users. 
-  for (i in 1:5){
+  #pr[which(pr[,2] == 21),]
+  
+  set.seed(123)
+  for (i in 1:300){
     if(i==1){
       pr = read.csv(usr.anime.file, nrows = rowcnt, skip = skp, header = T)
-      write.table(pr[which(pr[,2] == 21),], wrt.usr.anime.file, append = T, sep = ",", col.names = T, row.names = F)
+      write.table(pr[sample(nrow(pr), 20),], wrt.usr.anime.file, append = T, sep = ",", col.names = T, row.names = F)
     }else{
       pr = read.csv(usr.anime.file, nrows = rowcnt, skip = skp, header = F)
-      write.table(pr[which(pr[,2] == 21),], wrt.usr.anime.file, append = T, sep = ",", col.names = F, row.names = F)
+      write.table(pr[sample(nrow(pr), 20),], wrt.usr.anime.file, append = T, sep = ",", col.names = F, row.names = F)
     }
     
     skp = skp + rowcnt
     
     #print(skp) 
     #print(head(pr))
-    print(nrow(pr))
+    #print(nrow(pr))
   }
 }
 
@@ -62,20 +68,21 @@ read.file = function (dir, f){
 ```
 
 #Join the datasets
+
+a.title, a.type, a.source, a.episodes, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.favorites, a.premiered, a.broadcast, a.related, a.producer, a.licensor, a.studio, a.genre, a.opening_theme, a.ending_theme, 
 ```{r}
 join = function(){
-  joined.ds = sqldf("select a.title, a.type, a.source, a.episodes, a.status, a.airing, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.favorites, a.background, a.premiered, a.broadcast, a.related, a.producer, a.licensor, a.studio, a.genre, a.opening_theme, a.ending_theme, m.username, m.my_watched_episodes, m.my_start_date, m.my_finish_date, m.my_score, m.my_status,  m.my_rewatching, m.my_rewatching_ep, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.user_days_spent_watching, u.gender, u.location, u.birth_date, u.access_rank, u.join_date, u.last_online
+  joined.ds = sqldf("select a.title, a.type, a.source, a.episodes, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.favorites, a.premiered, a.broadcast, a.producer, a.licensor, a.studio, a.genre,  m.username, m.my_watched_episodes, m.my_start_date, m.my_finish_date, m.my_score, m.my_status,  m.my_rewatching, m.my_rewatching_ep, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.gender, u.location, u.join_date, u.last_online
       from ani as a 
       join myusrAni as m
         on a.anime_id = m.anime_id
       join usr as u
         on u.username = m.username")
-   wrt.usr.anime.file = paste0(wd,"/code/output/joinedDS.csv")
-  write.table(joined.ds, wrt.usr.anime.file, append = F, sep = ",", col.names = T, row.names = F)
+  #wrt.usr.anime.file = paste0(wd,"/code/output/joinedDS.csv")
+  #write.table(joined.ds, wrt.usr.anime.file, append = F, sep = ",", col.names = T, row.names = F)
   return(joined.ds)
 }
 ```
-
 
 #Main
 ```{r}
@@ -83,9 +90,10 @@ setwd("D:/Data Analytic Applications/anime")
 wd = getwd()
 
 prc.usr.anime.file(2000, wd)
-
+```
+```{r}
 myusrAni = read.file("/code/output/", "MycleanUserAnimeList.csv")
-myusrAni
+nrow(myusrAni)
 
 ani = read.file("/myAnimeList Dataset/extracted data/", "AnimeList.csv")
 head(ani)
@@ -93,9 +101,47 @@ head(ani)
 usr = read.file("/myAnimeList Dataset/extracted data/", "UserList.csv")
 head(usr)
 
-all.ds = join()
+```
+```{r}
+all_ds = join()
+summary(all.ds)
 ```
 
+#Evaluation of the sample dataset
+If we get a random sample from the User to Anime list then we see a pretty nice sample of number of times a users did a score, the number of times the anime show occurs in the list and the distribution of the scores are reasonable. (More high than low, greater counts in the high range. 
+```{r}
+
+
+sqldf("select title, count(title) as cnt
+      from all_ds
+      group by title
+      order by cnt desc ")
+sqldf("select username, count(username) as cnt
+      from all_ds
+      group by username
+      order by cnt desc ")
+sqldf("select my_score, count(my_score) as cnt
+      from all_ds
+      group by my_score
+      order by cnt desc ")
+```
+
+#Exploration
+```{r}
+str(ani)
+summary(ani[,-c(2, 3, 4,5,6, 10, 11, 22, 23)])
+str(usr)
+summary(usr[, -c(1,2,11,12,15,16,17)])
+
+summary(all.ds)
+summary(myusrAni)
+
+#nearZeroVar check
+colnames(ani[, c(nearZeroVar(ani))])
+colnames(usr[, c(nearZeroVar(usr))])
+colnames(myusrAni[,c(nearZeroVar(myusrAni))])
+
+```
 
 
 
