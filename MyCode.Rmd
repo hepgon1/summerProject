@@ -1,0 +1,74 @@
+---
+title: "Untitled"
+author: "Tyler Reed"
+date: "July 15, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+animeList <- read.csv("C:/Users/darth/Desktop/Anime Datasets/AnimeList.csv")
+#summary(animeList)
+str(animeList)
+```
+```{r}
+userList <- read.csv("C:/Users/darth/Desktop/Anime Datasets/UserList.csv")
+#summary(userList)
+str(userList)
+```
+```{r}
+joinedDS <- read.csv("C:/Users/darth/Desktop/Anime Datasets/joinedDS.csv")
+str(joinedDS$related)
+```
+
+```{r}
+library(e1071)
+library(sqldf)
+#skewness(animeList$score)
+#skewness(animeList$episodes)
+#skewness(animeList$rank)
+#skewness(animeList$popularity)
+#skewness(animeList$favorites)
+```
+```{r}
+#mine the Related, Anime_id & UserName fields in myCleanedUserAnmie list. Use SQL in R (SQLDF). When using WRITE, write it with a colon seperator. Open the file in Excel using the Import text wizard, tell it the seperator is a colon. Then read it back into a data frame.
+
+```
+
+```{r}
+relatedAnime <- sqldf("SELECT related
+                      FROM joinedDS
+                      GROUP by related")
+```
+
+```{r}
+sqldf("SELECT substr(related, 1,10) as first10, count(1)
+      FROM joinedDS
+      GROUP by first10")
+joinedDS$relate = substr(joinedDS$related, 1,10)
+joinedDS$relate[joinedDS$relate == "{'Adaptati"] = "Adaptations"
+joinedDS$relate[joinedDS$relate == "{'Parent s"] = "Relatives"
+joinedDS$relate[joinedDS$relate == "{'Prequel'"] = "Relatives"
+joinedDS$relate[joinedDS$relate == "{'Sequel':"] = "Relatives"
+joinedDS$relate[joinedDS$relate == "{'Alternat"] = "Alternatives"
+joinedDS$relate[joinedDS$relate == "{'Spin-off"] = "Alternatives"
+joinedDS$relate[joinedDS$relate == "{'Side sto"] = "Alternatives"
+joinedDS$relate[joinedDS$relate == "{'Other': "] = "Other"
+joinedDS$relate[joinedDS$relate == "{'Full sto"] = "Other"
+joinedDS$relate[joinedDS$relate == "{'Summary'"] = "Other"
+joinedDS$relate[joinedDS$relate == "{'Characte"] = "Other"
+joinedDS$relate[joinedDS$relate == "[]"] = "Other"
+joinedDS$relate[joinedDS$relate == ""] = "Other"
+
+
+sqldf("select relate, count(1) as cnt
+      from joinedDS
+      group by relate
+      order by cnt desc")
+```
+
+
+
