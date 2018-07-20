@@ -11,6 +11,8 @@ library(sqldf)
 library(caret)
 library(timeDate)
 library(dplyr)
+library(data.table)
+library(tidyverse)
 ```
 
 Main is on the bottom of this file. 
@@ -77,7 +79,7 @@ I decided on the fields in the join becuase:
 
 ```{r}
 join = function(){
-  joined.ds = sqldf("select a.title, a.type, a.source, a.episodes, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.favorites, a.premiered, a.broadcast, a.producer, a.licensor, a.studio, a.genre,  m.username, m.my_watched_episodes, m.my_start_date, m.my_finish_date, m.my_score, m.my_status,  m.my_rewatching, m.my_rewatching_ep, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.gender, u.location, u.join_date, u.last_online
+  joined.ds = sqldf("select a.anime_id, a.title, a.type, a.source, a.episodes, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.related, a.favorites, a.broadcast, a.producer, a.licensor, a.studio, a.genre,  m.username, m.my_watched_episodes, m.my_score, m.my_status, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.gender, u.location, u.join_date, u.last_online
       from ani as a 
       join myusrAni as m
         on a.anime_id = m.anime_id
@@ -90,9 +92,11 @@ join = function(){
 ```
 
 #Main
+
+5654000 records processed.
 ```{r}
 setwd("D:/Data Analytic Applications/anime")
-wd = getwd()
+wd = "D:/Data Analytic Applications/anime"
 
 prc.usr.anime.file(2000, wd)
 ```
@@ -143,17 +147,29 @@ sqldf("select location, count(location) as cnt
       from all_ds
       group by location
       order by cnt desc ")
+sqldf("select username, anime_id, my_score, count(*) as cnt
+      from all_ds
+      group by username, anime_id, my_score
+      having cnt > 1
+      order by cnt desc ")
+sqldf("select username, anime_id, count(anime_id) as cnt
+      from all_ds
+      group by username, anime_id
+      having cnt > 1
+      order by anime_id, cnt desc ")
+
 ```
 
 #Exploration
-```{r}
-str(ani)
-summary(ani)
-summary(ani[,-c(2, 3, 4,5,6, 10, 11, 22, 23)])
-str(usr)
-summary(usr[, -c(1,2,11,12,15,16,17)])
 
-summary(all.ds)
+```{r}
+str(ani[c("anime_id", "title", "type", "source", "episodes", "aired_string", "duration", "rating", "score","scored_by", "rank", "popularity", "members", "related", "favorites", "premiered","broadcast", "producer", "licensor", "studio", "genre")])
+summary(ani[c("anime_id", "title", "type", "source", "episodes", "aired_string", "duration", "rating", "score","scored_by", "rank", "popularity", "members", "related", "favorites", "premiered","broadcast", "producer", "licensor", "studio", "genre")])
+
+str(usr)
+summary(usr[, c("user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "gender", "location", "join_date", "last_online")])
+
+summary(all_ds)
 summary(myusrAni)
 
 #nearZeroVar check
@@ -163,5 +179,120 @@ colnames(myusrAni[,c(nearZeroVar(myusrAni))])
 
 ```
 
+# Alterations
 
+Convert the multiple level factors into less than 4, if possible.
 
+1. Convert last_online to 
+Blank or 1900 into Not reported or 1900
+Greater than 1900 to 2017 into Before 2018
+Equal to 2018 into 2018
+```{r}
+sqldf("select yr.yr, count(1) as cnt
+      from (select substr(last_online, 1,4) as yr
+        from all_ds) as yr
+      group by yr.yr")
+all_ds$lst_yr = substr(all_ds$last_online, 1,4)
+head(all_ds$lst_yr)
+all_ds$lst_yr[all_ds$lst_yr=="1900" | all_ds$lst_yr== ""] <- "Not Reported or 1900"
+all_ds$lst_yr[all_ds$lst_yr > "1900" & all_ds$lst_yr <= "2017"] <- "Before 2018"
+
+all_ds$lst_yr[all_ds$lst_yr=="2018"] <- "2018"
+sqldf("select lst_yr, count(1) as cnt
+      from all_ds
+      group by lst_yr
+      order by cnt desc ")
+
+```
+Convert join_date to:
+3 generations.
+Early - before 2009
+Middle = 2009 - 2012
+Late = 2012 - current
+```{r}
+sqldf("select yr.yr, count(1) as cnt
+      from (select substr(join_date, 1,4) as yr
+        from all_ds) as yr
+      group by yr.yr")
+all_ds$join_yr = substr(all_ds$join_date, 1,4)
+head(all_ds$join_yr)
+all_ds$join_yr[all_ds$join_yr < "2009" | all_ds$join_yr== ""] = "Early"
+all_ds$join_yr[all_ds$join_yr >= "2009" & all_ds$join_yr < "2012" ] = "Middle"
+all_ds$join_yr[all_ds$join_yr >= "2012" ] = "Late"
+
+sqldf("select join_yr, count(1) as cnt
+      from all_ds
+      group by join_yr
+      order by cnt desc ")
+
+```
+
+Location
+location
+```{r}
+sqldf("select substr(location, 1,2) loc, count(1) as cnt
+        from all_ds
+      group by loc  ")
+all_ds$loc = substr(all_ds$location, 1,15)
+head(all_ds$loc)
+all_ds$loc[all_ds$loc== ""] = "Undisclosed"
+all_ds$loc[all_ds$loc== grep("*[:digit:]",all_ds$loc, value = T)] = "Make Believe"
+all_ds$loc[all_ds$loc== grep("*[:punct:]",all_ds$loc, value = T)] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'omew'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'above'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'why'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'ãf'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'room'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'hogw'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'narnia'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% "i'll"] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'k.'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'wonderla'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'would'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'behind'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'toilet'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'in '] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'at '] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'hell'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'earth'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'insomnia'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'land of'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'inside'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'under'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'um.'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'the '] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'secret'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'where'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'my '] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'have'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'house'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'home'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'eating'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'between'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'around'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'follow'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'your'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'plane'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'alone'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
+all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
+
+all_ds$loc %like% 'somewhere'
+sqldf("select loc
+      from all_ds
+      where loc like '%omew%'
+      ")
+
+sqldf("select loc, count(1) as cnt
+      from all_ds
+      group by loc
+      order by loc
+      desc ")
+
+grep("[:digit:]",all_ds$loc, value = T)
+```
+      group by loc
+      order by cnt desc ")
