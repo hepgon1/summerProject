@@ -79,7 +79,7 @@ I decided on the fields in the join becuase:
 
 ```{r}
 join = function(){
-  joined.ds = sqldf("select a.anime_id, a.title, a.type, a.source, a.episodes, a.aired_string, a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.related, a.favorites, a.broadcast, a.producer, a.licensor, a.studio, a.genre,  m.username, m.my_watched_episodes, m.my_score, m.my_status, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.gender, u.location, u.join_date, u.last_online
+  joined.ds = sqldf("select a.anime_id, a.title, a.type, a.source, a.episodes,  a.duration, a.rating, a.score, a.scored_by, a.rank, a.popularity, a.members, a.related, a.favorites, a.broadcast, a.producer, a.licensor, a.studio, a.genre,  m.username, m.my_watched_episodes, m.my_score, m.my_status, u.user_watching, u.user_completed,  u.user_onhold, u.user_dropped, u.user_plantowatch, u.gender, u.join_date, u.last_online
       from ani as a 
       join myusrAni as m
         on a.anime_id = m.anime_id
@@ -118,19 +118,23 @@ Join the datasets and check the fields.  I have removed a lot of fields.
 ```{r}
 all_ds = join()
 ```
+
+Look at the structure and the skewness of any numeric type column
 ```{r}
+str(all_ds)
 summary(all_ds)
-skewness(all_ds[,c(4,8,9,11,12,13,21,28,29,31,32)])
+colnames(all_ds[sapply(all_ds, class) == "integer"])
+skewness(all_ds[,c(colnames(all_ds[sapply(all_ds, class) == "integer"]))])
 
+colnames(all_ds[sapply(all_ds, class) == "numeric"])
 
+histogram(all_ds$score, all_ds)
 ```
 
 #Evaluation of the sample dataset
 
 If we get a random sample from the User to Anime list then we see a pretty nice sample of number of times a users did a score, the number of times the anime show occurs in the list and the distribution of the scores are reasonable. (More high than low, greater counts in the high range. 
 ```{r}
-
-
 sqldf("select title, count(title) as cnt
       from all_ds
       group by title
@@ -142,11 +146,7 @@ sqldf("select username, count(username) as cnt
 sqldf("select my_score, count(my_score) as cnt
       from all_ds
       group by my_score
-      order by cnt desc ")
-sqldf("select location, count(location) as cnt
-      from all_ds
-      group by location
-      order by cnt desc ")
+      order by my_score desc ")
 sqldf("select username, anime_id, my_score, count(*) as cnt
       from all_ds
       group by username, anime_id, my_score
@@ -161,13 +161,13 @@ sqldf("select username, anime_id, count(anime_id) as cnt
 ```
 
 #Exploration
-
+What does the animeList and the UserList look like?
 ```{r}
-str(ani[c("anime_id", "title", "type", "source", "episodes", "aired_string", "duration", "rating", "score","scored_by", "rank", "popularity", "members", "related", "favorites", "premiered","broadcast", "producer", "licensor", "studio", "genre")])
+str(ani[c("anime_id", "title", "type", "source", "episodes", "duration", "rating", "score","scored_by", "rank", "popularity", "members", "related", "favorites", "premiered","broadcast", "producer", "licensor", "studio", "genre")])
 summary(ani[c("anime_id", "title", "type", "source", "episodes", "aired_string", "duration", "rating", "score","scored_by", "rank", "popularity", "members", "related", "favorites", "premiered","broadcast", "producer", "licensor", "studio", "genre")])
 
 str(usr)
-summary(usr[, c("user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "gender", "location", "join_date", "last_online")])
+summary(usr[, c("user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "gender", "join_date", "last_online")])
 
 summary(all_ds)
 summary(myusrAni)
@@ -192,15 +192,15 @@ sqldf("select yr.yr, count(1) as cnt
       from (select substr(last_online, 1,4) as yr
         from all_ds) as yr
       group by yr.yr")
-all_ds$lst_yr = substr(all_ds$last_online, 1,4)
-head(all_ds$lst_yr)
-all_ds$lst_yr[all_ds$lst_yr=="1900" | all_ds$lst_yr== ""] <- "Not Reported or 1900"
-all_ds$lst_yr[all_ds$lst_yr > "1900" & all_ds$lst_yr <= "2017"] <- "Before 2018"
+all_ds$lst_online_yr = substr(all_ds$last_online, 1,4)
+head(all_ds$lst_online_yr)
+all_ds$lst_online_yr[all_ds$lst_online_yr=="1900" | all_ds$lst_online_yr== ""] <- "Not Reported or 1900"
+all_ds$lst_online_yr[all_ds$lst_online_yr > "1900" & all_ds$lst_online_yr <= "2017"] <- "Before 2018"
 
-all_ds$lst_yr[all_ds$lst_yr=="2018"] <- "2018"
-sqldf("select lst_yr, count(1) as cnt
+all_ds$lst_online_yr[all_ds$lst_online_yr=="2018"] <- "2018"
+sqldf("select lst_online_yr, count(1) as cnt
       from all_ds
-      group by lst_yr
+      group by lst_online_yr
       order by cnt desc ")
 
 ```
@@ -216,9 +216,9 @@ sqldf("select yr.yr, count(1) as cnt
       group by yr.yr")
 all_ds$join_yr = substr(all_ds$join_date, 1,4)
 head(all_ds$join_yr)
+all_ds$join_yr[all_ds$join_yr >= "2012" ] = "Late"
 all_ds$join_yr[all_ds$join_yr < "2009" | all_ds$join_yr== ""] = "Early"
 all_ds$join_yr[all_ds$join_yr >= "2009" & all_ds$join_yr < "2012" ] = "Middle"
-all_ds$join_yr[all_ds$join_yr >= "2012" ] = "Late"
 
 sqldf("select join_yr, count(1) as cnt
       from all_ds
@@ -228,71 +228,134 @@ sqldf("select join_yr, count(1) as cnt
 ```
 
 Location
-location
+Decided not to do location no real insight gained since the groupings are very small.
 ```{r}
-sqldf("select substr(location, 1,2) loc, count(1) as cnt
-        from all_ds
-      group by loc  ")
-all_ds$loc = substr(all_ds$location, 1,15)
-head(all_ds$loc)
-all_ds$loc[all_ds$loc== ""] = "Undisclosed"
-all_ds$loc[all_ds$loc== grep("*[:digit:]",all_ds$loc, value = T)] = "Make Believe"
-all_ds$loc[all_ds$loc== grep("*[:punct:]",all_ds$loc, value = T)] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'omew'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'above'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'why'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'ãf'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'room'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'hogw'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'narnia'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% "i'll"] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'k.'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'wonderla'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'would'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'behind'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'toilet'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'in '] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'at '] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'hell'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'earth'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'insomnia'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'land of'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'inside'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'under'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'um.'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'the '] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'secret'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'where'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'my '] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'have'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'house'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'home'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'eating'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'between'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'around'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'follow'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'your'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'plane'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'alone'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
-all_ds$loc[str_to_lower(all_ds$loc) %like% 'front'] = "Make Believe"
+# sqldf("select substr(location, 1,2) loc, count(1) as cnt
+#         from all_ds
+#       group by loc  ")
+# all_ds$loc_grp = substr(all_ds$location, 1,15)
+# head(all_ds$loc)
+# all_ds$loc_grp[all_ds$loc_grp== ""] = "Undisclosed"
+# all_ds$loc_grp[all_ds$loc_grp== grep("*[:digit:]",all_ds$loc_grp, value = T)] = "Make Believe"
+# all_ds$loc_grp[all_ds$loc_grp== grep("*[:punct:]",all_ds$loc_grp, value = T)] = "Make Believe"
+# all_ds$loc_grp[str_to_lower(all_ds$loc_grp) %like% 'omew'] = "Make Believe"
+# 
+# sqldf("select loc_grp, count(1) as cnt
+#       from all_ds
+#       group by loc
+#       order by loc
+#       desc ")
 
-all_ds$loc %like% 'somewhere'
-sqldf("select loc
-      from all_ds
-      where loc like '%omew%'
-      ")
 
-sqldf("select loc, count(1) as cnt
-      from all_ds
-      group by loc
-      order by loc
-      desc ")
-
-grep("[:digit:]",all_ds$loc, value = T)
 ```
-      group by loc
-      order by cnt desc ")
+
+Gender
+```{r}
+all_ds$gnd_grp = all_ds$gender
+all_ds$gnd_grp[all_ds$gnd_grp == ""] = "Non-Binary"
+sqldf("Select gnd_grp, count(1) as cnt
+      from all_ds
+      group by gnd_grp")
+
+```
+
+source
+```{r}
+all_ds$anime_src = all_ds$source
+
+all_ds$anime_src[all_ds$anime_src == "Novel"] = "Book"
+all_ds$anime_src[all_ds$anime_src == "Light novel"] = "Book"
+all_ds$anime_src[all_ds$anime_src == "Picture book"] = "Book"
+all_ds$anime_src[all_ds$anime_src == "Visual novel"] = "Book"
+all_ds$anime_src[all_ds$anime_src == "Unknown"] = "Other"
+all_ds$anime_src[all_ds$anime_src == "Music"] = "Other"
+all_ds$anime_src[all_ds$anime_src == "Radio"] = "Other"
+all_ds$anime_src[all_ds$anime_src == "Card game"] = "Game"
+all_ds$anime_src[all_ds$anime_src == "Web manga"] = "Manga"
+all_ds$anime_src[all_ds$anime_src == "4-koma manga"] = "Manga"
+all_ds$anime_src[all_ds$anime_src == "Digital manga"] = "Manga"
+sqldf("Select anime_src, count(1) as cnt
+      from all_ds
+      group by anime_src")
+
+```
+
+
+duration
+```{r}
+all_ds$anime_len = substr(all_ds$duration, 1,3)
+all_ds$anime_len[all_ds$anime_len == "1 h" ] = "hour"
+all_ds$anime_len[all_ds$anime_len == "2 h" ] = "movie"
+all_ds$anime_len[all_ds$anime_len == "2 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "1 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "3 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "4 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "5 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "6 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "7 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "8 m" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len == "9 m" ] = "1-20"
+
+all_ds$anime_len[all_ds$anime_len >= "1" & all_ds$anime_len < "21" ] = "1-20"
+all_ds$anime_len[all_ds$anime_len >= "21" & all_ds$anime_len < "41" ] = "21-40"
+all_ds$anime_len[all_ds$anime_len >= "41" & all_ds$anime_len < "60" ] = "41-60"
+
+sqldf("Select anime_len, count(1) as cnt
+      from all_ds
+      group by anime_len")
+
+```
+
+#Related
+Categorize related
+```{r}
+sqldf("SELECT substr(related, 1,10) as first10, count(1)
+      FROM all_ds
+      GROUP by first10")
+all_ds$related_by = substr(all_ds$related, 1,10)
+all_ds$related_by[all_ds$related_by == "{'Adaptati"] = "Adaptations"
+all_ds$related_by[all_ds$related_by == "{'Parent s"] = "Relatives"
+all_ds$related_by[all_ds$related_by == "{'Prequel'"] = "Relatives"
+all_ds$related_by[all_ds$related_by == "{'Sequel':"] = "Relatives"
+all_ds$related_by[all_ds$related_by == "{'Alternat"] = "Alternatives"
+all_ds$related_by[all_ds$related_by == "{'Spin-off"] = "Alternatives"
+all_ds$related_by[all_ds$related_by == "{'Side sto"] = "Alternatives"
+all_ds$related_by[all_ds$related_by == "{'Other': "] = "Other"
+all_ds$related_by[all_ds$related_by == "{'Full sto"] = "Other"
+all_ds$related_by[all_ds$related_by == "{'Summary'"] = "Other"
+all_ds$related_by[all_ds$related_by == "{'Characte"] = "Other"
+all_ds$related_by[all_ds$related_by == "[]"] = "Other"
+all_ds$related_by[all_ds$related_by == ""] = "Other"
+
+
+sqldf("select related_by, count(1) as cnt
+      from all_ds
+      group by related_by
+      order by cnt desc")
+```
+
+Licensor
+Categorize Licensor
+```{r}
+
+```
+
+
+
+Studio
+Categorize Studio
+```{r}
+
+```
+
+
+```{r}
+colnames(all_ds)
+
+final_ds = all_ds[, c("type", "anime_src", "episodes", "anime_len", "rating", "score","scored_by","rank", "popularity", "members", "favorites", "broadcast", "producer", "licensor", "studio", "my_watched_episodes", "my_score","my_status","user_watching","user_completed","user_onhold", "user_dropped", "user_plantowatch","lst_online_yr","join_yr","gnd_grp","related_by")]
+
+head(final_ds)
+
+
+```
+
