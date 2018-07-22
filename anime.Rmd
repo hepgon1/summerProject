@@ -71,7 +71,7 @@ read.file = function (dir, f){
 
 #Join the datasets
 
-I decided on the fields in the join becuase:
+We decided on the fields in the join becuase:
 1. Removed fields that would require text mining to compare.
 2. Removed fields that had near zero variance.
 3. Removed id fields
@@ -194,10 +194,10 @@ sqldf("select yr.yr, count(1) as cnt
       group by yr.yr")
 all_ds$lst_online_yr = substr(all_ds$last_online, 1,4)
 head(all_ds$lst_online_yr)
-all_ds$lst_online_yr[all_ds$lst_online_yr=="1900" | all_ds$lst_online_yr== ""] <- "Not Reported or 1900"
-all_ds$lst_online_yr[all_ds$lst_online_yr > "1900" & all_ds$lst_online_yr <= "2017"] <- "Before 2018"
+all_ds$lst_online_yr[all_ds$lst_online_yr=="1900" | all_ds$lst_online_yr== ""] = "Not Reported or 1900"
+all_ds$lst_online_yr[all_ds$lst_online_yr > "1900" & all_ds$lst_online_yr <= "2017"] = "Before 2018"
 
-all_ds$lst_online_yr[all_ds$lst_online_yr=="2018"] <- "2018"
+all_ds$lst_online_yr[all_ds$lst_online_yr=="2018"] = "2018"
 sqldf("select lst_online_yr, count(1) as cnt
       from all_ds
       group by lst_online_yr
@@ -352,12 +352,14 @@ My_score
 Categorize my_score into high and low
 ```{r}
 all_ds$my_scr_bin = all_ds$my_score
-all_ds$my_scr_bin = ifelse((all_ds$my_score) == "8" | (all_ds$my_score) == "9" | (all_ds$my_score) == "10", "high", "low")
+
+all_ds = subset(all_ds, all_ds$my_score != "0")
+length(all_ds$my_score)
+
+all_ds$my_scr_bin = as.factor(ifelse((all_ds$my_score) == "8" | (all_ds$my_score) == "9" | (all_ds$my_score) == "10", "high", "low"))
 
 table(all_ds$my_scr_bin)
-
-
-
+class(all_ds$my_scr_bin)
 
 ```
 
@@ -369,11 +371,48 @@ final_ds = all_ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len"
 
 head(final_ds)
 
+train = createDataPartition(final_ds[,1], p = .75, list = F)
+f.train = final_ds[train,]
+f.test = final_ds[-train,]
 
+class(f.train$my_scr_bin)
 ```
 
 Random Forest
+, repeats=3
 ```{r}
+Sys.time()
+set.seed(123)
+control = trainControl(method="cv", number=10)
+metric = "Accuracy"
+mtry = sqrt(ncol(f.train))
+tunegrid = expand.grid(.mtry=mtry)
 
+rf = train(my_scr_bin ~ ., data=f.train, 
+                    method="rf", 
+                    na.action = na.exclude,
+                    metric=metric, 
+                    tuneGrid=tunegrid, 
+                    trControl=control)
+rf
+Sys.time()
+```
+
+predict RF
+```{r}
+pred = predict(rf, newdata = f.test)
+
+pred
+```
+
+
+Knn
+```{r}
+knnTune = train(my_scr_bin ~ ., data = f.train,
+                 method = "knn", 
+                 na.action = na.exclude,
+                 preProc = c("center", "scale"), 
+                 tuneGrid = data.frame(.k = 1:20), 
+                 trControl = trainControl(method = "cv"))
 ```
 
