@@ -348,14 +348,32 @@ Categorize Studio
 
 ```
 
+My_score
+Categorize my_score into high and low
+```{r}
+all_ds$my_scr_bin = all_ds$my_score
+all_ds$my_scr_bin = ifelse((all_ds$my_score) == "8" | (all_ds$my_score) == "9" | (all_ds$my_score) == "10", "high", "low")
+
+table(all_ds$my_scr_bin)
+
+
+
+
+```
+
 
 ```{r}
 colnames(all_ds)
 
-final_ds = all_ds[, c("type", "anime_src", "episodes", "anime_len", "rating", "score","scored_by","rank", "popularity", "members", "favorites", "broadcast", "producer", "licensor", "studio", "my_watched_episodes", "my_score","my_status","user_watching","user_completed","user_onhold", "user_dropped", "user_plantowatch","lst_online_yr","join_yr","gnd_grp","related_by")]
+final_ds = all_ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "broadcast", "producer", "licensor", "studio", "my_watched_episodes", "my_status", "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
 
 head(final_ds)
 
+
+```
+
+Random Forest
+```{r}
 
 ```
 
