@@ -70,5 +70,133 @@ sqldf("select relate, count(1) as cnt
       order by cnt desc")
 ```
 
+```{r}
+cleanDS <- read.csv("C:/Users/darth/Desktop/Anime Datasets/joinedDS.csv")
+summary(cleanDS$broadcast)
 
+sqldf("SELECT substr(broadcast, 1,10) as broad10, count(1)
+      FROM joinedDS
+      GROUP by broad10")
+
+joinedDS$broadcasted = substr(joinedDS$broadcast, 1,10)
+joinedDS$broadcasted[joinedDS$broadcasted == "Sundays at"] = "Sunday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Mondays at"] = "Monday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Tuesdays a"] = "Tuesday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Wednesdays"] = "Wednesday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Thursdays "] = "Thursday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Fridays at"] = "Friday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Saturdays "] = "Saturday"
+joinedDS$broadcasted[joinedDS$broadcasted == "Not schedu"] = "Other"
+joinedDS$broadcasted[joinedDS$broadcasted == "Unknown"] = "Other"
+joinedDS$broadcasted[joinedDS$broadcasted == ""] = "Other"
+
+sqldf("select broadcasted, count(1) as cnt
+      from joinedDS
+      group by broadcasted
+      order by cnt desc")
+```
+
+
+```{r}
+cleanDS <- read.csv("C:/Users/darth/Desktop/Anime Datasets/joinedDS.csv")
+#summary(cleanDS$producer)
+
+sqldf("SELECT substr(producer, 1,5) as prod5, count(1)
+      FROM joinedDS
+      GROUP by prod5")
+
+joinedDS$produced = substr(joinedDS$producer, 1,5)                    # How do I group the rest into OTHER?
+joinedDS$produced[joinedDS$produced == "Anipl"] = "Aniplex"
+joinedDS$produced[joinedDS$produced == "Banda"] = "Bandai Visual"
+joinedDS$produced[joinedDS$produced == "Kadok"] = "Kadokawa Shoten"
+joinedDS$produced[joinedDS$produced == "Starc"] = "Starchild Records"
+joinedDS$produced[joinedDS$produced == "Marve"] = "Marvelous"
+joinedDS$produced[joinedDS$produced == "Media"] = "Media Factory"
+joinedDS$produced[joinedDS$produced == "Dents"] = "Dentsu"
+joinedDS$produced[joinedDS$produced == "NHK"] = "NHK"
+joinedDS$produced[joinedDS$produced == "NHK, "] = "NHK"
+joinedDS$produced[joinedDS$produced == "TBS"] = "TBS"
+joinedDS$produced[joinedDS$produced == "TBS, "] = "TBS"
+joinedDS$produced[joinedDS$produced == "GDH"] = "GDH"
+joinedDS$produced[joinedDS$produced == "GDH, "] = "GDH"
+joinedDS$produced[joinedDS$produced == "VAP"] = "VAP"
+joinedDS$produced[joinedDS$produced == "VAP, "] = "VAP"
+joinedDS$produced[joinedDS$produced == "Fuji "] = "Fuji TV"
+joinedDS$produced[joinedDS$produced == "TV To"] = "TV Tokyo"
+joinedDS$produced[joinedDS$produced == "Geneo"] = "Geneon Universal"
+joinedDS$produced[joinedDS$produced == "Lanti"] = "Lantis"
+joinedDS$produced[joinedDS$produced == "Genco"] = "Genco"
+joinedDS$produced[joinedDS$produced == "TV As"] = "TV Asahi"
+joinedDS$produced[joinedDS$produced == "Front"] = "Frontier Works"
+joinedDS$produced[joinedDS$produced == "Pony "] = "Pony"
+joinedDS$produced[joinedDS$produced == "Dents"] = "Dentsu"
+joinedDS$produced[joinedDS$produced == "Sotsu"] = "Sotsu"
+joinedDS$produced[joinedDS$produced == "Media"] = "Media F"
+joinedDS$produced[joinedDS$produced == "Studi"] = "Studio"
+joinedDS$produced[joinedDS$produced == ""] = "Other"
+#joinedDS$produced[joinedDS$produced != "Anipl"] = "Other"
+
+
+sqldf("select produced, count(1) as cnt
+      from joinedDS
+      group by produced
+      order by cnt desc")
+```
+
+```{r}
+sqldf("SELECT substr(licensor, 1,5) as lic5, count(1)
+      FROM joinedDS
+      GROUP by lic5")
+
+joinedDS$licensed = substr(joinedDS$licensor, 1,5)                     # How do I group the rest into OTHER?
+joinedDS$licensed[joinedDS$licensed == "ADV F"] = "ADV Films"
+joinedDS$licensed[joinedDS$licensed == "Anipl"] = "Aniplex of America"
+joinedDS$licensed[joinedDS$licensed == "Banda"] = "Bandai Entertainment"
+joinedDS$licensed[joinedDS$licensed == "Disco"] = "Discotek Media"
+joinedDS$licensed[joinedDS$licensed == "Funim"] = "Funimation"
+joinedDS$licensed[joinedDS$licensed == "Media"] = "Media Blasters"
+joinedDS$licensed[joinedDS$licensed == "NIS A"] = "NIS America"
+joinedDS$licensed[joinedDS$licensed == "Nozom"] = "Nozomi Entertainment"
+joinedDS$licensed[joinedDS$licensed == "Senta"] = "Sentai Filmwork"
+joinedDS$licensed[joinedDS$licensed == "Viz M"] = "Viz Media"
+joinedDS$licensed[joinedDS$licensed == "Walt "] = "Walt Disney Studios"
+joinedDS$licensed[joinedDS$licensed == ""] = "Other"
+
+sqldf("select licensed, count(1) as cnt
+      from joinedDS
+      group by licensed
+      order by cnt desc")
+```
+
+```{r}
+sqldf("SELECT substr(studio, 1,8) as studio8, count(1)
+      FROM joinedDS
+      GROUP by studio8")
+
+joinedDS$studios = substr(joinedDS$studio, 1,8)                     # How do I group the rest into OTHER?
+joinedDS$studios[joinedDS$studios == "Madhouse"] = "Madhouse"
+joinedDS$studios[joinedDS$studios == "J.C.Staf"] = "J.C.Staff"
+joinedDS$studios[joinedDS$studios == "Studio D"] = "Studio Deen"
+joinedDS$studios[joinedDS$studios == "A-1 Pict"] = "A-1 Pictures"
+joinedDS$studios[joinedDS$studios == "Sunrise"] = "Sunrise"
+joinedDS$studios[joinedDS$studios == "Toei Ani"] = "Toei Animation"
+joinedDS$studios[joinedDS$studios == "Producti"] = "Production I.G"
+joinedDS$studios[joinedDS$studios == "Bones"] = "Bones"
+joinedDS$studios[joinedDS$studios == "Kyoto An"] = "Kyoto Animation"
+joinedDS$studios[joinedDS$studios == "Studio P"] = "Studio Pierrot"
+joinedDS$studios[joinedDS$studios == "Shaft"] = "Shaft"
+joinedDS$studios[joinedDS$studios == "Gonzo"] = "Gonzo"
+joinedDS$studios[joinedDS$studios == "Brain&#0"] = "Brains"
+joinedDS$studios[joinedDS$studios == "TMS Ente"] = "TMS Entertainment"
+joinedDS$studios[joinedDS$studios == "ufotable"] = "ufotable"
+joinedDS$studios[joinedDS$studios == "P.A. Wor"] = "P.A. Works"
+joinedDS$studios[joinedDS$studios == "Silver L"] = "Silver Link"
+joinedDS$studios[joinedDS$studios == "OLM"] = "OLM"
+joinedDS$studios[joinedDS$studios == ""] = "Other"
+
+sqldf("select studios, count(1) as cnt
+      from joinedDS
+      group by studios
+      order by cnt desc")
+```
 
