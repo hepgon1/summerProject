@@ -13,6 +13,7 @@ library(timeDate)
 library(dplyr)
 library(data.table)
 library(tidyverse)
+library(randomForest)
 ```
 
 Main is on the bottom of this file. 
@@ -96,11 +97,11 @@ join = function(){
 5654000 records processed.
 ```{r}
 setwd("D:/Data Analytic Applications/anime")
-wd = "D:/Data Analytic Applications/anime"
 
 prc.usr.anime.file(2000, wd)
 ```
 ```{r}
+wd = "D:/Data Analytic Applications/anime"
 myusrAni = read.file("/code/output/", "MycleanUserAnimeList.csv")
 nrow(myusrAni)
 
@@ -202,7 +203,8 @@ sqldf("select lst_online_yr, count(1) as cnt
       from all_ds
       group by lst_online_yr
       order by cnt desc ")
-
+class(all_ds$lst_online_yr)
+all_ds$lst_online_yr = as.factor(all_ds$lst_online_yr)
 ```
 Convert join_date to:
 3 generations.
@@ -224,6 +226,7 @@ sqldf("select join_yr, count(1) as cnt
       from all_ds
       group by join_yr
       order by cnt desc ")
+all_ds$join_yr = as.factor(all_ds$join_yr)
 
 ```
 
@@ -256,6 +259,7 @@ all_ds$gnd_grp[all_ds$gnd_grp == ""] = "Non-Binary"
 sqldf("Select gnd_grp, count(1) as cnt
       from all_ds
       group by gnd_grp")
+class(all_ds$gnd_grp)
 
 ```
 
@@ -277,6 +281,7 @@ all_ds$anime_src[all_ds$anime_src == "Digital manga"] = "Manga"
 sqldf("Select anime_src, count(1) as cnt
       from all_ds
       group by anime_src")
+all_ds$anime_src= as.factor(all_ds$anime_src)
 
 ```
 
@@ -304,6 +309,7 @@ sqldf("Select anime_len, count(1) as cnt
       from all_ds
       group by anime_len")
 
+all_ds$anime_len = as.factor(all_ds$anime_len)
 ```
 
 #Related
@@ -332,6 +338,8 @@ sqldf("select related_by, count(1) as cnt
       from all_ds
       group by related_by
       order by cnt desc")
+
+all_ds$related_by = as.factor(all_ds$related_by)
 ```
 
 Licensor
@@ -348,12 +356,15 @@ Categorize Studio
 
 ```
 
+
 My_score
 Categorize my_score into high and low
 ```{r}
 all_ds$my_scr_bin = all_ds$my_score
 
 all_ds = subset(all_ds, all_ds$my_score != "0")
+all_ds = subset(all_ds, all_ds$my_score != "")
+
 length(all_ds$my_score)
 
 all_ds$my_scr_bin = as.factor(ifelse((all_ds$my_score) == "8" | (all_ds$my_score) == "9" | (all_ds$my_score) == "10", "high", "low"))
@@ -363,11 +374,25 @@ class(all_ds$my_scr_bin)
 
 ```
 
+Rank
+The rank has 0.2% missing records. It is the only variable with mssing.  since it is so low, we chose to delete the missing rows.  
 
 ```{r}
-colnames(all_ds)
+all_ds$rank_no_na = all_ds$rank
+ds = na.omit(all_ds)
+summary(ds$rank)
+summary(all_ds$rank)
+length(ds$rank)
+length(all_ds$rank)
 
-final_ds = all_ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "broadcast", "producer", "licensor", "studio", "my_watched_episodes", "my_status", "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
+```
+
+
+, "broadcast", "producer", "licensor", "studio"
+```{r}
+colnames(ds)
+
+final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes", "my_status", "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
 
 head(final_ds)
 
@@ -398,6 +423,48 @@ rf
 Sys.time()
 ```
 
+```{r}
+f.spam.rf = function(data, mtries, nrtrees) {
+set.seed (1)
+  rf.bag.spam =randomForest(my_scr_bin ~ .,data=data, mtry= mtries, ntree=nrtrees, importance =TRUE)
+  rf.bag.spam
+  list(rf.spam = rf.bag.spam, mtries = mtries, nrtrees = nrtrees, call = rf.bag.spam$call)
+}
+
+get.err.rt = function(nrtrees) {
+  OOB=NULL
+  spam.rf = NULL
+  for (i in 4:6) {
+    spam.rf = f.spam.rf(f.train, i, nrtrees)
+    OOB[i] = round(tail(spam.rf$rf.spam$err.rate, n=1)[1]*100, 2)
+  }
+  min.OOB = min(OOB, na.rm = T)
+  min.OOB
+  best.err.rt = which(min.OOB==OOB)
+  best.err.rt
+  list(min.oob = min.OOB, best.err.rt=best.err.rt, funct = spam.rf)
+}
+
+spam.rf.500 = get.err.rt(50)
+spam.rf.500$best.err.rt
+spam.rf.500$min.oob
+
+spam.rf.1000 = get.err.rt(100)
+spam.rf.1000$best.err.rt
+spam.rf.1000$min.oob
+
+spam.rf.2000 = get.err.rt(200)
+spam.rf.2000$best.err.rt
+spam.rf.2000$min.oob
+
+```
+```{r}
+summary(final_ds)
+str(final_ds)
+```
+
+
+
 predict RF
 ```{r}
 pred = predict(rf, newdata = f.test)
@@ -408,11 +475,18 @@ pred
 
 Knn
 ```{r}
+Sys.time()
 knnTune = train(my_scr_bin ~ ., data = f.train,
                  method = "knn", 
-                 na.action = na.exclude,
+                 #na.action = na.exclude,
                  preProc = c("center", "scale"), 
                  tuneGrid = data.frame(.k = 1:20), 
-                 trControl = trainControl(method = "cv"))
+                 trControl = trainControl(method = "cv"),
+                  verbose = F)
+Sys.time()
+```
+
+```{r}
+knnTune
 ```
 
