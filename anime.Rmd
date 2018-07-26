@@ -95,10 +95,12 @@ join = function(){
 #Main
 
 5654000 records processed.
-```{r}
-setwd("D:/Data Analytic Applications/anime")
 
-prc.usr.anime.file(2000, wd)
+This is commented out so we don't accidentally run it again.  It takes a few hours on my laptop.
+```{r}
+# setwd("D:/Data Analytic Applications/anime")
+
+# prc.usr.anime.file(2000, wd)
 ```
 ```{r}
 wd = "D:/Data Analytic Applications/anime"
@@ -205,6 +207,7 @@ sqldf("select lst_online_yr, count(1) as cnt
       order by cnt desc ")
 class(all_ds$lst_online_yr)
 all_ds$lst_online_yr = as.factor(all_ds$lst_online_yr)
+summary(all_ds$lst_online_yr)
 ```
 Convert join_date to:
 3 generations.
@@ -217,7 +220,7 @@ sqldf("select yr.yr, count(1) as cnt
         from all_ds) as yr
       group by yr.yr")
 all_ds$join_yr = substr(all_ds$join_date, 1,4)
-head(all_ds$join_yr)
+#head(all_ds$join_yr)
 all_ds$join_yr[all_ds$join_yr >= "2012" ] = "Late"
 all_ds$join_yr[all_ds$join_yr < "2009" | all_ds$join_yr== ""] = "Early"
 all_ds$join_yr[all_ds$join_yr >= "2009" & all_ds$join_yr < "2012" ] = "Middle"
@@ -227,6 +230,7 @@ sqldf("select join_yr, count(1) as cnt
       group by join_yr
       order by cnt desc ")
 all_ds$join_yr = as.factor(all_ds$join_yr)
+summary(all_ds$join_yr)
 
 ```
 
@@ -254,62 +258,90 @@ Decided not to do location no real insight gained since the groupings are very s
 
 Gender
 ```{r}
-all_ds$gnd_grp = all_ds$gender
-all_ds$gnd_grp[all_ds$gnd_grp == ""] = "Non-Binary"
+#all_ds$gnd_grp = all_ds$gender
+all_ds$gnd_grp[all_ds$gender == "Female"] = "Female"
+all_ds$gnd_grp[all_ds$gender == "Male"] = "Male"
+all_ds$gnd_grp[all_ds$gender == ""] = "Non-Binary"
+all_ds$gnd_grp[all_ds$gender == "Non-Binary"] = "Non-Binary"
 sqldf("Select gnd_grp, count(1) as cnt
       from all_ds
       group by gnd_grp")
+all_ds$gnd_grp = as.factor(all_ds$gnd_grp)
 class(all_ds$gnd_grp)
-
+summary(all_ds$gnd_grp)
 ```
 
 source
 ```{r}
-all_ds$anime_src = all_ds$source
+#all_ds$anime_src = all_ds$source
 
-all_ds$anime_src[all_ds$anime_src == "Novel"] = "Book"
-all_ds$anime_src[all_ds$anime_src == "Light novel"] = "Book"
-all_ds$anime_src[all_ds$anime_src == "Picture book"] = "Book"
-all_ds$anime_src[all_ds$anime_src == "Visual novel"] = "Book"
-all_ds$anime_src[all_ds$anime_src == "Unknown"] = "Other"
-all_ds$anime_src[all_ds$anime_src == "Music"] = "Other"
-all_ds$anime_src[all_ds$anime_src == "Radio"] = "Other"
-all_ds$anime_src[all_ds$anime_src == "Card game"] = "Game"
-all_ds$anime_src[all_ds$anime_src == "Web manga"] = "Manga"
-all_ds$anime_src[all_ds$anime_src == "4-koma manga"] = "Manga"
-all_ds$anime_src[all_ds$anime_src == "Digital manga"] = "Manga"
+all_ds$anime_src[all_ds$source == "Novel"] = "Book"
+all_ds$anime_src[all_ds$source == "Light novel"] = "Book"
+all_ds$anime_src[all_ds$source == "Picture book"] = "Book"
+all_ds$anime_src[all_ds$source == "Visual novel"] = "Book"
+all_ds$anime_src[all_ds$source == "Book"] = "Book"
+
+all_ds$anime_src[all_ds$source == "Unknown"] = "Other"
+all_ds$anime_src[all_ds$source == "Music"] = "Other"
+all_ds$anime_src[all_ds$source == "Radio"] = "Other"
+all_ds$anime_src[all_ds$source == "Original"] = "Other"
+all_ds$anime_src[all_ds$source == "Other"] = "Other"
+
+all_ds$anime_src[all_ds$source == "Card game"] = "Game"
+all_ds$anime_src[all_ds$source == "Game"] = "Game"
+
+all_ds$anime_src[all_ds$source == "Web manga"] = "Manga"
+all_ds$anime_src[all_ds$source == "4-koma manga"] = "Manga"
+all_ds$anime_src[all_ds$source == "Digital manga"] = "Manga"
+all_ds$anime_src[all_ds$source == "Manga"] = "Manga"
+
 sqldf("Select anime_src, count(1) as cnt
       from all_ds
       group by anime_src")
-all_ds$anime_src= as.factor(all_ds$anime_src)
 
+sqldf("Select anime_src, source
+      from all_ds
+      group by anime_src, source")
+
+all_ds$anime_src= as.factor(all_ds$anime_src)
+summary(all_ds$anime_src)
+#summary(all_ds$source)
 ```
 
 
 duration
 ```{r}
-all_ds$anime_len = substr(all_ds$duration, 1,3)
-all_ds$anime_len[all_ds$anime_len == "1 h" ] = "hour"
-all_ds$anime_len[all_ds$anime_len == "2 h" ] = "movie"
-all_ds$anime_len[all_ds$anime_len == "2 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "1 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "3 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "4 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "5 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "6 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "7 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "8 m" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len == "9 m" ] = "1-20"
+all_ds$dur = substr(all_ds$duration, 1,3)
 
-all_ds$anime_len[all_ds$anime_len >= "1" & all_ds$anime_len < "21" ] = "1-20"
-all_ds$anime_len[all_ds$anime_len >= "21" & all_ds$anime_len < "41" ] = "21-40"
-all_ds$anime_len[all_ds$anime_len >= "41" & all_ds$anime_len < "60" ] = "41-60"
+
+all_ds$anime_len[all_ds$dur >= "1" & all_ds$dur < "21" ] = "1-20"
+all_ds$anime_len[all_ds$dur >= "21" & all_ds$dur < "41" ] = "21-40"
+all_ds$anime_len[all_ds$dur >= "41" & all_ds$dur < "60" ] = "41-60"
+all_ds$anime_len[all_ds$dur == "1 h" ] = "hour"
+all_ds$anime_len[all_ds$dur == "2 h" ] = "movie"
+all_ds$anime_len[all_ds$dur == "2 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "1 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "3 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "4 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "5 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "6 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "7 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "8 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "9 m" ] = "1-20"
+all_ds$anime_len[all_ds$dur == "Unk" ] = "1-20"
+
 
 sqldf("Select anime_len, count(1) as cnt
       from all_ds
       group by anime_len")
 
+sqldf("Select anime_len, substr(duration, 1,3)  as dur
+      from all_ds
+      group by anime_len, dur")
+
+
 all_ds$anime_len = as.factor(all_ds$anime_len)
+summary(all_ds$anime_len)
 ```
 
 #Related
@@ -318,20 +350,20 @@ Categorize related
 sqldf("SELECT substr(related, 1,10) as first10, count(1)
       FROM all_ds
       GROUP by first10")
-all_ds$related_by = substr(all_ds$related, 1,10)
-all_ds$related_by[all_ds$related_by == "{'Adaptati"] = "Adaptations"
-all_ds$related_by[all_ds$related_by == "{'Parent s"] = "Relatives"
-all_ds$related_by[all_ds$related_by == "{'Prequel'"] = "Relatives"
-all_ds$related_by[all_ds$related_by == "{'Sequel':"] = "Relatives"
-all_ds$related_by[all_ds$related_by == "{'Alternat"] = "Alternatives"
-all_ds$related_by[all_ds$related_by == "{'Spin-off"] = "Alternatives"
-all_ds$related_by[all_ds$related_by == "{'Side sto"] = "Alternatives"
-all_ds$related_by[all_ds$related_by == "{'Other': "] = "Other"
-all_ds$related_by[all_ds$related_by == "{'Full sto"] = "Other"
-all_ds$related_by[all_ds$related_by == "{'Summary'"] = "Other"
-all_ds$related_by[all_ds$related_by == "{'Characte"] = "Other"
-all_ds$related_by[all_ds$related_by == "[]"] = "Other"
-all_ds$related_by[all_ds$related_by == ""] = "Other"
+all_ds$relate = substr(all_ds$related, 1,10)
+all_ds$related_by[all_ds$relate == "{'Adaptati"] = "Adaptations"
+all_ds$related_by[all_ds$relate == "{'Parent s"] = "Relatives"
+all_ds$related_by[all_ds$relate == "{'Prequel'"] = "Relatives"
+all_ds$related_by[all_ds$relate == "{'Sequel':"] = "Relatives"
+all_ds$related_by[all_ds$relate == "{'Alternat"] = "Alternatives"
+all_ds$related_by[all_ds$relate == "{'Spin-off"] = "Alternatives"
+all_ds$related_by[all_ds$relate == "{'Side sto"] = "Alternatives"
+all_ds$related_by[all_ds$relate == "{'Other': "] = "Other"
+all_ds$related_by[all_ds$relate == "{'Full sto"] = "Other"
+all_ds$related_by[all_ds$relate == "{'Summary'"] = "Other"
+all_ds$related_by[all_ds$relate == "{'Characte"] = "Other"
+all_ds$related_by[all_ds$relate == "[]"] = "Other"
+all_ds$related_by[all_ds$relate == ""] = "Other"
 
 
 sqldf("select related_by, count(1) as cnt
@@ -340,6 +372,7 @@ sqldf("select related_by, count(1) as cnt
       order by cnt desc")
 
 all_ds$related_by = as.factor(all_ds$related_by)
+summary(all_ds$related_by)
 ```
 
 Licensor
@@ -373,10 +406,22 @@ table(all_ds$my_scr_bin)
 class(all_ds$my_scr_bin)
 
 ```
+My watched episodes
+```{r}
+sqldf("select distinct my_watched_episodes from all_ds order by my_watched_episodes")
+all_ds$my_watched_episodes_int = as.integer(all_ds$my_watched_episodes)
 
+summary(all_ds$my_watched_episodes_int)
+```
+
+My status
+```{r}
+sqldf("select distinct my_status from all_ds order by my_status")
+all_ds$my_stat = as.factor(all_ds$my_status)
+summary(all_ds$my_stat)
+```
 Rank
-The rank has 0.2% missing records. It is the only variable with mssing.  since it is so low, we chose to delete the missing rows.  
-
+The rank has 0.2% missing records. It is the only variable with mssing.  since it is so low, we chose to delete the missing rows. 
 ```{r}
 all_ds$rank_no_na = all_ds$rank
 ds = na.omit(all_ds)
@@ -384,7 +429,14 @@ summary(ds$rank)
 summary(all_ds$rank)
 length(ds$rank)
 length(all_ds$rank)
+colnames(ds)
+```
 
+
+
+
+```{r}
+corr = cor(final_ds, method = "pearson")
 ```
 
 
@@ -392,8 +444,9 @@ length(all_ds$rank)
 ```{r}
 colnames(ds)
 
-final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes", "my_status", "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
-
+final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes_int", "my_stat_int", "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
+summary(final_ds)
+str(final_ds)
 head(final_ds)
 
 train = createDataPartition(final_ds[,1], p = .75, list = F)
@@ -401,7 +454,10 @@ f.train = final_ds[train,]
 f.test = final_ds[-train,]
 
 class(f.train$my_scr_bin)
+summary(final_ds$anime_src)
 ```
+
+
 
 Random Forest
 , repeats=3
@@ -458,10 +514,7 @@ spam.rf.2000$best.err.rt
 spam.rf.2000$min.oob
 
 ```
-```{r}
-summary(final_ds)
-str(final_ds)
-```
+
 
 
 
@@ -478,12 +531,13 @@ Knn
 Sys.time()
 knnTune = train(my_scr_bin ~ ., data = f.train,
                  method = "knn", 
-                 #na.action = na.exclude,
+                 na.action = na.exclude,
                  preProc = c("center", "scale"), 
                  tuneGrid = data.frame(.k = 1:20), 
                  trControl = trainControl(method = "cv"),
                   verbose = F)
 Sys.time()
+
 ```
 
 ```{r}
