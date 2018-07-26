@@ -376,20 +376,6 @@ all_ds$related_by = as.factor(all_ds$related_by)
 summary(all_ds$related_by)
 ```
 
-Licensor
-Categorize Licensor
-```{r}
-
-```
-
-
-
-Studio
-Categorize Studio
-```{r}
-
-```
-
 
 My_score
 Categorize my_score into high and low
@@ -528,7 +514,7 @@ summary(all_ds$rate)
 ```
 
 
-Rank
+Rank and type
 The rank has 0.2% missing records. It is the only variable with mssing.  since it is so low, we chose to delete the missing rows. 
 ```{r}
 all_ds$rank_no_na = all_ds$rank
@@ -537,7 +523,8 @@ summary(ds$rank)
 summary(all_ds$rank)
 length(ds$rank)
 length(all_ds$rank)
-colnames(ds)
+ds$type = droplevels(ds)$type
+str(ds)
 ```
 
 
@@ -642,8 +629,7 @@ knnTune = train(my_scr_bin ~ ., data = f.train,
                  na.action = na.exclude,
                  preProc = c("center", "scale"), 
                  tuneGrid = data.frame(.k = 1:20), 
-                 trControl = trainControl(method = "cv"),
-                  verbose = F)
+                 trControl = trainControl(method = "cv"))
 Sys.time()
 
 ```
