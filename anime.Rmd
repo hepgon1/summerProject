@@ -14,6 +14,7 @@ library(dplyr)
 library(data.table)
 library(tidyverse)
 library(randomForest)
+library(e1071)
 ```
 
 Main is on the bottom of this file. 
@@ -414,6 +415,119 @@ all_ds$my_watched_episodes_int = as.integer(all_ds$my_watched_episodes)
 summary(all_ds$my_watched_episodes_int)
 ```
 
+Broadcast
+```{r}
+sqldf("SELECT substr(broadcast, 1,10) as broad10, count(1)
+      FROM all_ds
+      GROUP by broad10")
+
+all_ds$broad = substr(all_ds$broadcast, 1,10)
+all_ds$broadcasted[all_ds$broad == "Sundays at"] = "Sunday"
+all_ds$broadcasted[all_ds$broad == "Mondays at"] = "Monday"
+all_ds$broadcasted[all_ds$broad == "Tuesdays a"] = "Tuesday"
+all_ds$broadcasted[all_ds$broad == "Wednesdays"] = "Wednesday"
+all_ds$broadcasted[all_ds$broad == "Thursdays "] = "Thursday"
+all_ds$broadcasted[all_ds$broad == "Fridays at"] = "Friday"
+all_ds$broadcasted[all_ds$broad == "Saturdays "] = "Saturday"
+all_ds$broadcasted[all_ds$broad == "Not schedu"] = "Other"
+all_ds$broadcasted[all_ds$broad == "Unknown"] = "Other"
+all_ds$broadcasted[all_ds$broad == ""] = "Other"
+
+sqldf("select broadcasted, count(1) as cnt
+      from all_ds
+      group by broadcasted
+      order by cnt desc")
+all_ds$broadcasted = as.factor(all_ds$broadcasted)
+summary(all_ds$broadcasted)
+```
+
+Producer
+```{r}
+dsProd = sqldf("SELECT substr(producer, 1,5) as prod5, count(1) as prodCount
+      FROM all_ds
+      GROUP by prod5")
+joinProd = sqldf("select producer, prodCount
+                 from all_ds as j
+                 left join dsProd as d
+                 on substr(j.producer, 1,5) = d.prod5")
+
+
+all_ds$prodCount = joinProd$prodCount
+all_ds$prodHL[all_ds$prodCount >= "250" ] = "High"
+all_ds$prodHL[all_ds$prodCount < "250" ] = "Low"
+
+sqldf("select prodHL, count(1) as cnt
+      from all_ds
+      group by prodHL
+      order by cnt desc")
+all_ds$prodHL = as.factor(all_ds$prodHL)
+summary(all_ds$prodHL)
+```
+
+Licensor:
+```{r}
+dsLic = sqldf("SELECT substr(licensor, 1,5) as lic5, count(1) as licCount
+      FROM all_ds
+      GROUP by lic5")
+joinLic = sqldf("select licensor, licCount
+                 from all_ds as j
+                 left join dsLic as d
+                 on substr(j.licensor, 1,5) = d.lic5")
+
+
+all_ds$licCount = joinLic$licCount
+all_ds$licHL[all_ds$licCount >= "250" ] = "High"
+all_ds$licHL[all_ds$licCount < "250" ] = "Low"
+
+sqldf("select licHL, count(1) as cnt
+      from all_ds
+      group by licHL
+      order by cnt desc")
+
+all_ds$licHL = as.factor(all_ds$licHL)
+summary(all_ds$licHL)
+```
+
+Studio:
+```{r}
+dsStud = sqldf("SELECT substr(studio, 1,8) as stud8, count(1) as studCount
+      FROM all_ds
+      GROUP by stud8")
+joinStud = sqldf("select studio, studCount
+                 from all_ds as j
+                 left join dsStud as d
+                 on substr(j.studio, 1,8) = d.stud8")
+
+
+all_ds$studCount = joinStud$studCount
+all_ds$studHL[all_ds$studCount >= "350" ] = "High"
+all_ds$studHL[all_ds$studCount < "350" ] = "Low"
+
+sqldf("select studHL, count(1) as cnt
+      from all_ds
+      group by studHL
+      order by cnt desc")
+all_ds$studHL = as.factor(all_ds$studHL)
+summary(all_ds$studHL)
+```
+
+Rating
+```{r}
+summary(all_ds$rating)
+all_ds$rate[all_ds$rating == "G - All Ages"]  = "G+"
+all_ds$rate[all_ds$rating == "None"]  = "G+"
+all_ds$rate[all_ds$rating == "PG - Children"]  = "G+"
+all_ds$rate[all_ds$rating == "PG-13 - Teens 13 or older"]  = "G+"
+
+all_ds$rate[all_ds$rating == "R - 17+ (violence & profanity)"]  = "R+"
+all_ds$rate[all_ds$rating == "R+ - Mild Nudity"]  = "R+"
+all_ds$rate[all_ds$rating == "Rx - Hentai"]  = "R+"
+all_ds$rate = as.factor(all_ds$rate)
+summary(all_ds$rate)
+
+```
+
+
 Rank
 The rank has 0.2% missing records. It is the only variable with mssing.  since it is so low, we chose to delete the missing rows. 
 ```{r}
@@ -438,7 +552,7 @@ corr = cor(final_ds, method = "pearson")
 ```{r}
 colnames(ds)
 
-final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes_int",  "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
+final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rate", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes_int",  "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by", "prodHL", "licHL", "studHL", "broadcasted")]
 summary(final_ds)
 str(final_ds)
 head(final_ds)
