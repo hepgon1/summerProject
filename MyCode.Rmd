@@ -101,102 +101,62 @@ sqldf("select broadcasted, count(1) as cnt
 cleanDS <- read.csv("C:/Users/darth/Desktop/Anime Datasets/joinedDS.csv")
 #summary(cleanDS$producer)
 
-sqldf("SELECT substr(producer, 1,5) as prod5, count(1)
+dsProd = sqldf("SELECT substr(producer, 1,5) as prod5, count(1) as prodCount
       FROM joinedDS
       GROUP by prod5")
-
-joinedDS$produced = substr(joinedDS$producer, 1,5)                    # How do I group the rest into OTHER?
-joinedDS$produced[joinedDS$produced == "Anipl"] = "Aniplex"
-joinedDS$produced[joinedDS$produced == "Banda"] = "Bandai Visual"
-joinedDS$produced[joinedDS$produced == "Kadok"] = "Kadokawa Shoten"
-joinedDS$produced[joinedDS$produced == "Starc"] = "Starchild Records"
-joinedDS$produced[joinedDS$produced == "Marve"] = "Marvelous"
-joinedDS$produced[joinedDS$produced == "Media"] = "Media Factory"
-joinedDS$produced[joinedDS$produced == "Dents"] = "Dentsu"
-joinedDS$produced[joinedDS$produced == "NHK"] = "NHK"
-joinedDS$produced[joinedDS$produced == "NHK, "] = "NHK"
-joinedDS$produced[joinedDS$produced == "TBS"] = "TBS"
-joinedDS$produced[joinedDS$produced == "TBS, "] = "TBS"
-joinedDS$produced[joinedDS$produced == "GDH"] = "GDH"
-joinedDS$produced[joinedDS$produced == "GDH, "] = "GDH"
-joinedDS$produced[joinedDS$produced == "VAP"] = "VAP"
-joinedDS$produced[joinedDS$produced == "VAP, "] = "VAP"
-joinedDS$produced[joinedDS$produced == "Fuji "] = "Fuji TV"
-joinedDS$produced[joinedDS$produced == "TV To"] = "TV Tokyo"
-joinedDS$produced[joinedDS$produced == "Geneo"] = "Geneon Universal"
-joinedDS$produced[joinedDS$produced == "Lanti"] = "Lantis"
-joinedDS$produced[joinedDS$produced == "Genco"] = "Genco"
-joinedDS$produced[joinedDS$produced == "TV As"] = "TV Asahi"
-joinedDS$produced[joinedDS$produced == "Front"] = "Frontier Works"
-joinedDS$produced[joinedDS$produced == "Pony "] = "Pony"
-joinedDS$produced[joinedDS$produced == "Dents"] = "Dentsu"
-joinedDS$produced[joinedDS$produced == "Sotsu"] = "Sotsu"
-joinedDS$produced[joinedDS$produced == "Media"] = "Media F"
-joinedDS$produced[joinedDS$produced == "Studi"] = "Studio"
-joinedDS$produced[joinedDS$produced == ""] = "Other"
-#joinedDS$produced[joinedDS$produced != "Anipl"] = "Other"
+joinProd = sqldf("select producer, prodCount
+                 from joinedDS as j
+                 left join dsProd as d
+                 on substr(j.producer, 1,5) = d.prod5")
 
 
-sqldf("select produced, count(1) as cnt
+joinedDS$prodCount = joinProd$prodCount
+joinedDS$prodHL[joinedDS$prodCount >= "250" ] = "High"
+joinedDS$prodHL[joinedDS$prodCount < "250" ] = "Low"
+
+sqldf("select prodHL, count(1) as cnt
       from joinedDS
-      group by produced
+      group by prodHL
       order by cnt desc")
 ```
 
 ```{r}
-sqldf("SELECT substr(licensor, 1,5) as lic5, count(1)
+dsLic = sqldf("SELECT substr(licensor, 1,5) as lic5, count(1) as licCount
       FROM joinedDS
       GROUP by lic5")
+joinLic = sqldf("select licensor, licCount
+                 from joinedDS as j
+                 left join dsLic as d
+                 on substr(j.licensor, 1,5) = d.lic5")
 
-joinedDS$licensed = substr(joinedDS$licensor, 1,5)                     # How do I group the rest into OTHER?
-joinedDS$licensed[joinedDS$licensed == "ADV F"] = "ADV Films"
-joinedDS$licensed[joinedDS$licensed == "Anipl"] = "Aniplex of America"
-joinedDS$licensed[joinedDS$licensed == "Banda"] = "Bandai Entertainment"
-joinedDS$licensed[joinedDS$licensed == "Disco"] = "Discotek Media"
-joinedDS$licensed[joinedDS$licensed == "Funim"] = "Funimation"
-joinedDS$licensed[joinedDS$licensed == "Media"] = "Media Blasters"
-joinedDS$licensed[joinedDS$licensed == "NIS A"] = "NIS America"
-joinedDS$licensed[joinedDS$licensed == "Nozom"] = "Nozomi Entertainment"
-joinedDS$licensed[joinedDS$licensed == "Senta"] = "Sentai Filmwork"
-joinedDS$licensed[joinedDS$licensed == "Viz M"] = "Viz Media"
-joinedDS$licensed[joinedDS$licensed == "Walt "] = "Walt Disney Studios"
-joinedDS$licensed[joinedDS$licensed == ""] = "Other"
 
-sqldf("select licensed, count(1) as cnt
+joinedDS$licCount = joinLic$licCount
+joinedDS$licHL[joinedDS$licCount >= "250" ] = "High"
+joinedDS$licHL[joinedDS$licCount < "250" ] = "Low"
+
+sqldf("select licHL, count(1) as cnt
       from joinedDS
-      group by licensed
+      group by licHL
       order by cnt desc")
 ```
 
 ```{r}
-sqldf("SELECT substr(studio, 1,8) as studio8, count(1)
+dsStud = sqldf("SELECT substr(studio, 1,8) as stud8, count(1) as studCount
       FROM joinedDS
-      GROUP by studio8")
+      GROUP by stud8")
+joinStud = sqldf("select studio, studCount
+                 from joinedDS as j
+                 left join dsStud as d
+                 on substr(j.studio, 1,8) = d.stud8")
 
-joinedDS$studios = substr(joinedDS$studio, 1,8)                     # How do I group the rest into OTHER?
-joinedDS$studios[joinedDS$studios == "Madhouse"] = "Madhouse"
-joinedDS$studios[joinedDS$studios == "J.C.Staf"] = "J.C.Staff"
-joinedDS$studios[joinedDS$studios == "Studio D"] = "Studio Deen"
-joinedDS$studios[joinedDS$studios == "A-1 Pict"] = "A-1 Pictures"
-joinedDS$studios[joinedDS$studios == "Sunrise"] = "Sunrise"
-joinedDS$studios[joinedDS$studios == "Toei Ani"] = "Toei Animation"
-joinedDS$studios[joinedDS$studios == "Producti"] = "Production I.G"
-joinedDS$studios[joinedDS$studios == "Bones"] = "Bones"
-joinedDS$studios[joinedDS$studios == "Kyoto An"] = "Kyoto Animation"
-joinedDS$studios[joinedDS$studios == "Studio P"] = "Studio Pierrot"
-joinedDS$studios[joinedDS$studios == "Shaft"] = "Shaft"
-joinedDS$studios[joinedDS$studios == "Gonzo"] = "Gonzo"
-joinedDS$studios[joinedDS$studios == "Brain&#0"] = "Brains"
-joinedDS$studios[joinedDS$studios == "TMS Ente"] = "TMS Entertainment"
-joinedDS$studios[joinedDS$studios == "ufotable"] = "ufotable"
-joinedDS$studios[joinedDS$studios == "P.A. Wor"] = "P.A. Works"
-joinedDS$studios[joinedDS$studios == "Silver L"] = "Silver Link"
-joinedDS$studios[joinedDS$studios == "OLM"] = "OLM"
-joinedDS$studios[joinedDS$studios == ""] = "Other"
 
-sqldf("select studios, count(1) as cnt
+joinedDS$studCount = joinStud$studCount
+joinedDS$studHL[joinedDS$studCount >= "350" ] = "High"
+joinedDS$studHL[joinedDS$studCount < "350" ] = "Low"
+
+sqldf("select studHL, count(1) as cnt
       from joinedDS
-      group by studios
+      group by studHL
       order by cnt desc")
 ```
 
