@@ -414,12 +414,6 @@ all_ds$my_watched_episodes_int = as.integer(all_ds$my_watched_episodes)
 summary(all_ds$my_watched_episodes_int)
 ```
 
-My status
-```{r}
-sqldf("select distinct my_status from all_ds order by my_status")
-all_ds$my_stat = as.factor(all_ds$my_status)
-summary(all_ds$my_stat)
-```
 Rank
 The rank has 0.2% missing records. It is the only variable with mssing.  since it is so low, we chose to delete the missing rows. 
 ```{r}
@@ -444,7 +438,7 @@ corr = cor(final_ds, method = "pearson")
 ```{r}
 colnames(ds)
 
-final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes_int", "my_stat_int", "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
+final_ds = ds[, c("my_scr_bin", "type", "anime_src", "episodes", "anime_len", "rating", "score", "scored_by", "rank", "popularity", "members", "favorites", "my_watched_episodes_int",  "user_watching", "user_completed", "user_onhold", "user_dropped", "user_plantowatch", "lst_online_yr", "join_yr", "gnd_grp", "related_by")]
 summary(final_ds)
 str(final_ds)
 head(final_ds)
