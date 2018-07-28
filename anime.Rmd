@@ -588,13 +588,13 @@ rfTune
 
 prfTune = ggplot(rfTune$results, aes(x = Sens, y = mtry))
 prfTune=prfTune + geom_point() +
-  xlim(0.55, 0.75) +
+  xlim(0.70, 0.72) +
   xlab("Sensitivity") +
-  ylab("K")+
+  ylab("Mtry")+
   ggtitle("Random Forest Sensitivity Plot")+
   theme_bw()
 prfTune= prfTune+geom_text(aes(label=
-                     paste0("Mtry= ", rfTune$results$mtry,", Sensitivity = ",
+                     paste0("", rfTune$results$mtry,", ",
                             round(rfTune$results$Sens,4)*100, "%")
                    ), hjust= -.1)
 
@@ -604,14 +604,9 @@ prfTune
 predict RF
 ```{r}
 
-pred = predict(rfTune, newdata = f.test)
+rfpred = predict(rfTune, newdata = f.test)
 
-rfpredtbl = table(pred,f.test$my_scr_bin)
-
-rfSens = rfpredtbl[1,1] /(rfpredtbl[1,1] + rfpredtbl[1,2])
-
-rfpredtbl
-rfSens
+confusionMatrix(rfpred,f.test$my_scr_bin)
 
 ```
 
@@ -624,7 +619,7 @@ knnTune = train(model, data = f.train,
                  metric = "Sensitivity",
                  na.action = na.exclude,
                  preProc = c("center", "scale"), 
-                 tuneGrid = data.frame(.k = 20:70), 
+                 tuneGrid = data.frame(.k = 35:55), 
                  trControl = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary, number =10))
 Sys.time()
 
@@ -634,10 +629,9 @@ Sys.time()
 #str(knnTune)
 knnTune
 
-knnTune$results
 pknnTrain = ggplot(knnTune$results, aes(x = Sens, y = k))
 pknnTrain=pknnTrain + geom_point() +
-  xlim(0.55, 0.75) +
+  xlim(0.70, 0.74) +
   xlab("Sensitivity") +
   ylab("K")+
   ggtitle("Knn K Sensitivity Plot")+
@@ -651,32 +645,30 @@ pknnTrain
 
 predict KNN
 ```{r}
-knnpred = predict(knnTune, newdata = f.test)
+knnpred = predict.train(knnTune, newdata = f.test)
 
-knnpred
-knnpredtbl = table(knnpred,f.test$my_scr_bin)
-
-knnSens = knnpredtbl[1,1] /(knnpredtbl[1,1] + knnpredtbl[1,2])
-
-knnpredtbl
-knnSens
+confusionMatrix(knnpred,f.test$my_scr_bin)
 ```
 Logistic Regression
 ```{r}
 Sys.time()
-logTune = train(my_scr_bin ~ ., data = f.train,
+logTune = train(model, data = f.train,
                  method = "glm", 
                  metric = "Sensitivity",
                  family="binomial",
                  na.action = na.exclude,
-                 preProc = c("center", "scale") #, 
-                 #trControl = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary))
-)
+                 preProc = c("center", "scale") , 
+                 trControl = trainControl(method = "cv", 
+                                          classProbs = T,
+                                          summaryFunction = twoClassSummary,
+                                          number =10))
+
 Sys.time()
 
 ```
 ```{r}
-str(logTune)
+#str(logTune)
+logTune$finalModel$qr
 logTune$finalModel
 
 ```
