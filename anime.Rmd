@@ -15,6 +15,7 @@ library(data.table)
 library(tidyverse)
 library(randomForest)
 library(e1071)
+library(ggplot2)
 ```
 
 Main is on the bottom of this file. 
@@ -531,7 +532,9 @@ str(ds)
 
 
 ```{r}
-corr = cor(final_ds, method = "pearson")
+
+cols = final_ds[sapply(final_ds, class) == "integer"]
+corr = cor(final_ds[cols], method = "pearson")
 ```
 
 
@@ -552,6 +555,12 @@ class(f.train$my_scr_bin)
 summary(final_ds$anime_src)
 ```
 
+Model input
+```{r}
+model = my_scr_bin ~ anime_src + anime_len + rate + score + scored_by + rank + popularity + favorites + user_watching + user_completed + user_onhold + user_dropped + user_plantowatch + lst_online_yr + join_yr + gnd_grp + broadcasted
+model
+```
+
 
 
 Random Forest
@@ -559,82 +568,138 @@ Random Forest
 ```{r}
 Sys.time()
 set.seed(123)
-control = trainControl(method="cv", number=10)
-metric = "Accuracy"
+control = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary, number = 10, search="grid")
+metric = "Sensitivity"
 mtry = sqrt(ncol(f.train))
-tunegrid = expand.grid(.mtry=mtry)
+tunegrid = expand.grid(.mtry=c(1:15))
 
-rf = train(my_scr_bin ~ ., data=f.train, 
+rfTune = train(model, data=f.train, 
                     method="rf", 
                     na.action = na.exclude,
                     metric=metric, 
                     tuneGrid=tunegrid, 
                     trControl=control)
-rf
+
 Sys.time()
 ```
 
 ```{r}
-f.spam.rf = function(data, mtries, nrtrees) {
-set.seed (1)
-  rf.bag.spam =randomForest(my_scr_bin ~ .,data=data, mtry= mtries, ntree=nrtrees, importance =TRUE)
-  rf.bag.spam
-  list(rf.spam = rf.bag.spam, mtries = mtries, nrtrees = nrtrees, call = rf.bag.spam$call)
-}
+rfTune
 
-get.err.rt = function(nrtrees) {
-  OOB=NULL
-  spam.rf = NULL
-  for (i in 4:6) {
-    spam.rf = f.spam.rf(f.train, i, nrtrees)
-    OOB[i] = round(tail(spam.rf$rf.spam$err.rate, n=1)[1]*100, 2)
-  }
-  min.OOB = min(OOB, na.rm = T)
-  min.OOB
-  best.err.rt = which(min.OOB==OOB)
-  best.err.rt
-  list(min.oob = min.OOB, best.err.rt=best.err.rt, funct = spam.rf)
-}
+prfTune = ggplot(rfTune$results, aes(x = Sens, y = mtry))
+prfTune=prfTune + geom_point() +
+  xlim(0.55, 0.75) +
+  xlab("Sensitivity") +
+  ylab("K")+
+  ggtitle("Random Forest Sensitivity Plot")+
+  theme_bw()
+prfTune= prfTune+geom_text(aes(label=
+                     paste0("Mtry= ", rfTune$results$mtry,", Sensitivity = ",
+                            round(rfTune$results$Sens,4)*100, "%")
+                   ), hjust= -.1)
 
-spam.rf.500 = get.err.rt(50)
-spam.rf.500$best.err.rt
-spam.rf.500$min.oob
-
-spam.rf.1000 = get.err.rt(100)
-spam.rf.1000$best.err.rt
-spam.rf.1000$min.oob
-
-spam.rf.2000 = get.err.rt(200)
-spam.rf.2000$best.err.rt
-spam.rf.2000$min.oob
-
+prfTune
 ```
-
-
-
 
 predict RF
 ```{r}
-pred = predict(rf, newdata = f.test)
 
-pred
+pred = predict(rfTune, newdata = f.test)
+
+rfpredtbl = table(pred,f.test$my_scr_bin)
+
+rfSens = rfpredtbl[1,1] /(rfpredtbl[1,1] + rfpredtbl[1,2])
+
+rfpredtbl
+rfSens
+
 ```
 
 
 Knn
 ```{r}
 Sys.time()
-knnTune = train(my_scr_bin ~ ., data = f.train,
+knnTune = train(model, data = f.train,
                  method = "knn", 
+                 metric = "Sensitivity",
                  na.action = na.exclude,
                  preProc = c("center", "scale"), 
-                 tuneGrid = data.frame(.k = 1:20), 
-                 trControl = trainControl(method = "cv"))
+                 tuneGrid = data.frame(.k = 20:70), 
+                 trControl = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary, number =10))
 Sys.time()
 
 ```
 
 ```{r}
+#str(knnTune)
 knnTune
+
+knnTune$results
+pknnTrain = ggplot(knnTune$results, aes(x = Sens, y = k))
+pknnTrain=pknnTrain + geom_point() +
+  xlim(0.55, 0.75) +
+  xlab("Sensitivity") +
+  ylab("K")+
+  ggtitle("Knn K Sensitivity Plot")+
+  theme_bw()
+pknnTrain= pknnTrain+geom_text(aes(label=
+                     paste0("k=", knnTune$results$k,", Sens=",
+                            round(knnTune$results$Sens,4)*100, "%")
+                   ), hjust= -.1)
+pknnTrain
 ```
+
+predict KNN
+```{r}
+knnpred = predict(knnTune, newdata = f.test)
+
+knnpred
+knnpredtbl = table(knnpred,f.test$my_scr_bin)
+
+knnSens = knnpredtbl[1,1] /(knnpredtbl[1,1] + knnpredtbl[1,2])
+
+knnpredtbl
+knnSens
+```
+Logistic Regression
+```{r}
+Sys.time()
+logTune = train(my_scr_bin ~ ., data = f.train,
+                 method = "glm", 
+                 metric = "Sensitivity",
+                 family="binomial",
+                 na.action = na.exclude,
+                 preProc = c("center", "scale") #, 
+                 #trControl = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary))
+)
+Sys.time()
+
+```
+```{r}
+str(logTune)
+logTune$finalModel
+
+```
+stepwise AIC
+
+, 
+                 trControl = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary)
+```{r}
+Sys.time()
+glmTune = train(my_scr_bin ~ ., data = f.train,
+                 method = "glmStepAIC", 
+                 direction = "both",
+                 metric = "Sensitivity",
+                 family="binomial",
+                 na.action = na.exclude,
+                 preProc = c("center", "scale"))
+Sys.time()
+
+```
+```{r}
+glmTune
+colnames(glmTune$finalModel$model)
+```
+
+
 
