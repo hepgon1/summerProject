@@ -614,6 +614,7 @@ confusionMatrix(rfpred,f.test$my_scr_bin)
 Knn
 ```{r}
 Sys.time()
+set.seed(123)
 knnTune = train(model, data = f.train,
                  method = "knn", 
                  metric = "Sensitivity",
@@ -631,13 +632,13 @@ knnTune
 
 pknnTrain = ggplot(knnTune$results, aes(x = Sens, y = k))
 pknnTrain=pknnTrain + geom_point() +
-  xlim(0.70, 0.74) +
+  xlim(0.71, 0.74) +
   xlab("Sensitivity") +
   ylab("K")+
   ggtitle("Knn K Sensitivity Plot")+
   theme_bw()
 pknnTrain= pknnTrain+geom_text(aes(label=
-                     paste0("k=", knnTune$results$k,", Sens=",
+                     paste0(knnTune$results$k,", ",
                             round(knnTune$results$Sens,4)*100, "%")
                    ), hjust= -.1)
 pknnTrain
