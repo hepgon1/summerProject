@@ -627,7 +627,6 @@ Sys.time()
 ```
 
 ```{r}
-#str(knnTune)
 knnTune
 
 pknnTrain = ggplot(knnTune$results, aes(x = Sens, y = k))
@@ -643,6 +642,8 @@ pknnTrain= pknnTrain+geom_text(aes(label=
                    ), hjust= -.1)
 pknnTrain
 ```
+
+
 
 predict KNN
 ```{r}
@@ -667,6 +668,12 @@ logTune = train(model, data = f.train,
 Sys.time()
 
 ```
+```{r}
+summary(logTune$finalModel)
+```
+
+
+
 predict Logistic Regression
 ```{r}
 logpred = predict.train(logTune, newdata = f.test)
@@ -674,9 +681,10 @@ logpred = predict.train(logTune, newdata = f.test)
 confusionMatrix(logpred,f.test$my_scr_bin)
 ```
 
+
 ```{r}
 #str(logTune)
-logTune$finalModel$qr
+summary(logTune$finalModel)
 logTune$finalModel
 
 ```
@@ -723,29 +731,28 @@ ldaPred = predict(ldaTune, f.test)
 confusionMatrix(ldaPred,f.test$my_scr_bin)
 ```
 
-
 SVM
 ```{r}
-Sys.time()
-svmTune = train(model, data = f.train,
-                method = "svmRadial",
-                #preProc = c("center", "scale"),
-                tuneLength = 10,
-                trControl = trainControl(method = "cv", 
-                                          classProbs = T,
-                                          summaryFunction = twoClassSummary,
-                                          number =10))
-Sys.time()
-#svmTune
-str(svmTune)
+# Sys.time()
+# svmTune = train(model, data = f.train,
+#                 method = "svmRadial",
+#                 #preProc = c("center", "scale"),
+#                 tuneLength = 10,
+#                 trControl = trainControl(method = "cv", 
+#                                           classProbs = T,
+#                                           summaryFunction = twoClassSummary,
+#                                           number =10))
+# Sys.time()
+# #svmTune
+# str(svmTune)
 #colnames(svmTune$finalModel$model)
 ```
 
 ```{r}
-str(svmPredict)
-#to get class probabilities
-svmProbs <- predict(svmTune, newdata = f.test,
-                    type = "prob") 
-head(svmProbs)
+# str(svmPredict)
+# #to get class probabilities
+# svmProbs <- predict(svmTune, newdata = f.test,
+#                     type = "prob") 
+# head(svmProbs)
 ```
 
