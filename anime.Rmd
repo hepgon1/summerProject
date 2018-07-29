@@ -667,6 +667,13 @@ logTune = train(model, data = f.train,
 Sys.time()
 
 ```
+predict Logistic Regression
+```{r}
+logpred = predict.train(logTune, newdata = f.test)
+
+confusionMatrix(logpred,f.test$my_scr_bin)
+```
+
 ```{r}
 #str(logTune)
 logTune$finalModel$qr
@@ -694,5 +701,51 @@ glmTune
 colnames(glmTune$finalModel$model)
 ```
 
+LDA
+```{r}
+Sys.time()
+ldaTune = train(model, data = f.train,
+                method = "lda",
+                metric = "Sensitivity",
+                preProc = c("center", "scale"),
+                tuneLength = 10,
+                trControl = trainControl(method = "cv", 
+                                          classProbs = T,
+                                          summaryFunction = twoClassSummary,
+                                          number =10))
+Sys.time()
+```
 
+Predict LDA
+```{r}
+ldaPred = predict(ldaTune, f.test)
+
+confusionMatrix(ldaPred,f.test$my_scr_bin)
+```
+
+
+SVM
+```{r}
+Sys.time()
+svmTune = train(model, data = f.train,
+                method = "svmRadial",
+                #preProc = c("center", "scale"),
+                tuneLength = 10,
+                trControl = trainControl(method = "cv", 
+                                          classProbs = T,
+                                          summaryFunction = twoClassSummary,
+                                          number =10))
+Sys.time()
+#svmTune
+str(svmTune)
+#colnames(svmTune$finalModel$model)
+```
+
+```{r}
+str(svmPredict)
+#to get class probabilities
+svmProbs <- predict(svmTune, newdata = f.test,
+                    type = "prob") 
+head(svmProbs)
+```
 
