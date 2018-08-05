@@ -16,6 +16,7 @@ library(tidyverse)
 library(randomForest)
 library(e1071)
 library(ggplot2)
+library(corrplot)
 ```
 
 Main is on the bottom of this file. 
@@ -531,11 +532,7 @@ str(ds)
 
 
 
-```{r}
 
-cols = final_ds[sapply(final_ds, class) == "integer"]
-corr = cor(final_ds[cols], method = "pearson")
-```
 
 
 , "broadcast", "producer", "licensor", "studio"
@@ -555,9 +552,38 @@ class(f.train$my_scr_bin)
 summary(final_ds$anime_src)
 ```
 
+```{r}
+
+cols = colnames(final_ds[sapply(final_ds, class) == "integer"])
+
+corr = cor(final_ds[,c(cols)], method = "pearson")
+
+corrplot(corr, method = "number", type="lower")
+```
+
+stepwise AIC
+
+```{r}
+# Sys.time()
+# stepTune = train(my_scr_bin ~ ., data = f.train,
+#                  method = "glmStepAIC",
+#                  direction = "both",
+#                  metric = "Sensitivity",
+#                  family="binomial",
+#                  na.action = na.exclude,
+#                  preProc = c("center", "scale"))
+# Sys.time()
+
+```
+```{r}
+# stepTune
+# colnames(stepTune$finalModel$model)
+```
+
+
 Model input
 ```{r}
-model = my_scr_bin ~ anime_src + anime_len + rate + score + scored_by + rank + popularity + favorites + user_watching + user_completed + user_onhold + user_dropped + user_plantowatch + lst_online_yr + join_yr + gnd_grp + broadcasted
+model = my_scr_bin ~ anime_src + anime_len + rate + score + rank + popularity + favorites + user_watching + user_completed + user_onhold + user_dropped + user_plantowatch + lst_online_yr + join_yr + gnd_grp + broadcasted
 model
 ```
 
@@ -603,6 +629,7 @@ prfTune
 
 predict RF
 ```{r}
+plot(varImp(rfTune))
 
 rfpred = predict(rfTune, newdata = f.test)
 
@@ -628,6 +655,8 @@ Sys.time()
 
 ```{r}
 knnTune
+
+plot(varImp(knnTune))
 
 pknnTrain = ggplot(knnTune$results, aes(x = Sens, y = k))
 pknnTrain=pknnTrain + geom_point() +
@@ -670,6 +699,7 @@ Sys.time()
 ```
 ```{r}
 summary(logTune$finalModel)
+plot(varImp(logTune))
 ```
 
 
@@ -688,26 +718,7 @@ summary(logTune$finalModel)
 logTune$finalModel
 
 ```
-stepwise AIC
 
-, 
-                 trControl = trainControl(method = "cv", classProbs = T,summaryFunction = twoClassSummary)
-```{r}
-Sys.time()
-glmTune = train(my_scr_bin ~ ., data = f.train,
-                 method = "glmStepAIC", 
-                 direction = "both",
-                 metric = "Sensitivity",
-                 family="binomial",
-                 na.action = na.exclude,
-                 preProc = c("center", "scale"))
-Sys.time()
-
-```
-```{r}
-glmTune
-colnames(glmTune$finalModel$model)
-```
 
 LDA
 ```{r}
@@ -726,6 +737,8 @@ Sys.time()
 
 Predict LDA
 ```{r}
+plot(varImp(ldaTune))
+
 ldaPred = predict(ldaTune, f.test)
 
 confusionMatrix(ldaPred,f.test$my_scr_bin)
