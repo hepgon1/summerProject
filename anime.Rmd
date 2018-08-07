@@ -558,7 +558,9 @@ cols = colnames(final_ds[sapply(final_ds, class) == "integer"])
 
 corr = cor(final_ds[,c(cols)], method = "pearson")
 
-corrplot(corr, method = "number", type="lower")
+corrplot(corr, method = "ellipse", type = "lower", tl.srt = 45)
+
+corrplot.mixed(corr, lower= "ellipse", upper = "circle")
 ```
 
 stepwise AIC
@@ -625,11 +627,13 @@ prfTune= prfTune+geom_text(aes(label=
                    ), hjust= -.1)
 
 prfTune
+
+plot(varImp(rfTune))
+
 ```
 
 predict RF
 ```{r}
-plot(varImp(rfTune))
 
 rfpred = predict(rfTune, newdata = f.test)
 
